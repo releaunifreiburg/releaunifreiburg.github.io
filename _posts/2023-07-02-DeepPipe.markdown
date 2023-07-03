@@ -3,6 +3,7 @@ layout: post
 title:  "Deep Pipeline Embeddings for AutoML"
 date:   2023-07-02 10:30:16 +0200
 categories: jekyll update
+permalink: /deepppipe/
 ---
 
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" ></script>
