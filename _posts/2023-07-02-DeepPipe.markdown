@@ -8,7 +8,7 @@ permalink: /deepppipe/
 
 <script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" ></script>
 
-This is a blog post about [our paper][our-paper] published on KDD 2023. Check the original paper and the [code][code] for further details.
+This is a blog post about [our paper][our-paper] published on KDD 2023. Check the original paper and the [code][code] for further details. Some notation might differ from the original paper for the sake of simplicity.
 
 ## 1. Motivation
 
