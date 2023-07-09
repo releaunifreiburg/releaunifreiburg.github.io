@@ -34,7 +34,7 @@ To attain the best performance possible, we need to search over the set of all p
 
 ## 2. Creating the Embedding Network
 
-We want to create a network that takes a pipeline \\(\mathbf{x}\\) in a high-dimensional original space and projects it to an embedding space \\( \tilde{\textbf{x}} = \phi(\mathbf{x}) \\), where similar pipelines are close to each other. However, how can we build such a network? We can build it via two methods: using assumptions and prior knowledge about the problem, a.k.a. inducive biases, or using meta-data.
+We want to create a network that takes a pipeline \\(\mathbf{x}\\) in a high-dimensional original space and projects it to an embedding space \\( \tilde{\textbf{x}} = \phi(\mathbf{x}) \\), where similar pipelines are close to each other. However, how can we build such a network? We can build it via two methods: using assumptions and prior knowledge about the problem, a.k.a. inductive biases, or using meta-data.
 
 {:refdef: style="text-align: center;"}
 ![alat text](/assets/images/deeppipe/embedding_network.svg)
