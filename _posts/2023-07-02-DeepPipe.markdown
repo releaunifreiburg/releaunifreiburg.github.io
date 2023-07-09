@@ -141,7 +141,7 @@ print(deep_pipe.model)
 [^task]: In this context, a task is a ML problem and the dataset. For instance a class prediction on Iris Dataset or binary classification on Titanic Dataset are two different tasks. 
 [^2]: [Deep Kernel Learning](https://arxiv.org/abs/1511.02222)
 [^3]: [FSBO](https://arxiv.org/abs/2101.07667) 
-[^4]: [Bayesian Opimization Blog Post](http://krasserm.github.io/2018/03/21/bayesian-optimization/)
+[^4]: [Bayesian Optimization Blog Post](http://krasserm.github.io/2018/03/21/bayesian-optimization/)
 
 [our-paper]: https://arxiv.org/abs/2305.14009
 [code]: https://github.com/releaunifreiburg/DeepPipe
