@@ -1,0 +1,184 @@
+---
+layout: post
+title:  "Hyperparameter Optimization for Deep Learning (HPO4DL)"
+date:   2023-09-28 10:15:41 +0200
+categories: hpo
+permalink: /hpo4dl/
+google_analytics: G-K7M6YQS41Y
+tags: [Hyperparameter-Optimization, AutoML, Multi-Fidelity, Deep-Kernel-Learning]
+---
+
+<script src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML" type="text/javascript" ></script>
+
+
+## 1. Motivation
+
+In the domain of machine learning, Hyperparameter Optimization (HPO) is a critical process that can influence model performance. The progression of HPO methodologies has transitioned from elementary techniques such as random search and grid search to more intricate methods. Among these advanced methods, SMAC and Optuna have been recognized for their effectiveness. HPO4DL is developed as a framework designed specifically for multi-fidelity hyperparameter optimization in deep learning models.
+
+Multi-fidelity optimization in the realm of HPO involves evaluating model configurations at varied levels of detail. Instead of always performing thorough assessments, it begins with quick evaluations, advancing to more detailed ones only when necessary. This approach conserves computational resources and efficiently narrows down the most promising hyperparameter configurations.
+
+The core optimizer in HPO4DL is DyHPO [^dyhpo-paper], which is a novel Bayesian Optimization approach to hyperparameter optimization tailored for deep learning. While conventional multi-fidelity optimization methods sometimes inefficiently allocate their resources, DyHPO stands out by dynamically determining the best hyperparameter configurations to train further. This dynamic selection is driven by using a deep kernel for Gaussian Processes that captures the details of the learning curve and an acquisition function that incorporates multi-budget information.
+
+## 2. Architecture
+
+{:refdef: style="text-align: center;"}
+![alat text](/assets/images/hpo4dl/architecture.svg)
+*HPO4DL Architecture*
+{: refdef}
+
+
+At the core of HPO4DL lies the Tuner, acting as the primary user interface. It's designed to accept a variety of inputs: the search space, a gray box objective function, the optimizer's budget, and any supplemental optimizer parameters. Working in tandem with the Tuner is the Gray Box Wrapper Module, which manages the evaluation of the objective function. Meanwhile, the Optimizer plays a strategic role, picking out hyperparameter configurations deemed most promising for extended evaluation. Complementing this process, the Configuration Manager oversees the creation and storage of various hyperparameter configurations. Once all evaluations are concluded, the Tuner then presents the optimal configuration it found.
+
+
+## 3. Installation and Usage
+
+Getting started with hpo4dl is straightforward. Let's walk through the installation process and a basic usage example.
+
+**Installing hpo4dl:**
+
+{% highlight bash %}
+pip install hpo4dl
+{% endhighlight %}
+
+**A Simple Usage Example:**
+
+{% highlight python %}
+from typing import List, Dict, Union
+from hpo4dl.tuner import Tuner
+from ConfigSpace import ConfigurationSpace
+
+
+def objective_function(
+    configuration: Dict,
+    epoch: int,
+    previous_epoch: int,
+    checkpoint_path: str
+) -> Union[Dict, List[Dict]]:
+    x = configuration["x"]
+    evaluated_info = [
+        {'epoch': i, 'metric': (x - 2) ** 2} 
+        for i in range(previous_epoch + 1, epoch + 1)
+    ]
+    return evaluated_info
+
+
+configspace = ConfigurationSpace({"x": (-5.0, 10.0)})
+
+tuner = Tuner(
+    objective_function=objective_function,
+    configuration_space=configspace,
+    minimize=True,
+    max_budget=1000,
+    optimizer='dyhpo',
+    seed=0,
+    max_epochs=27,
+    num_configurations=1000,
+    output_path='hpo4dl_results',
+)
+
+incumbent = tuner.run()
+{% endhighlight %}
+
+Key Parameters Explained:
+
+- ```objective_function```: The function you aim to optimize.
+
+- ```configuration_space```: The hyperparameter configuration space over which the optimization is performed.
+
+- ```minimize```: Boolean flag indicates whether the objective function should be minimized (True) or maximized (False).
+
+- ```max_budget```: The cumulative number of epochs the tuner will evaluate. This budget gets distributed across various hyperparameter configurations.
+
+- ```optimizer```: Specifies the optimization technique employed.
+
+- ```seed```: Random seed for reproducibility.
+
+- ```max_epochs```: Maximum number of epochs a single configuration is evaluated.
+
+- ```num_configurations```: Determines the number of configurations DyHPO reviews before selecting the next one for evaluation. Essentially, it guides the balance between exploration and exploitation in the optimization process.
+
+- ```output_path```: Designates the location to save the results and the checkpoint for the best hyperparameter optimization.
+
+#### Objective function
+
+{% highlight python %}
+def objective_function(
+    configuration: Dict, 
+    epoch: int, 
+    previous_epoch: int, 
+    checkpoint_path: str
+) -> Union[Dict, List[Dict]]
+{% endhighlight %}
+
+The objective function is tailored to support interrupted and resumed training processes. Specifically, it should continue training from a ```previous_epoch``` to the designated ```epoch```.
+
+The function should return a dictionary or a list of dictionaries upon completion. Every dictionary must include the ```epoch``` and ```metric``` keys. Here's a sample return value:
+```
+{
+    “epoch”: 5,
+    “metric”: 0.76
+}
+```
+For optimal performance with DyHPO, ensure the metric is normalized.
+
+Lastly, the ```checkpoint_path``` is allocated for saving any intermediate files produced during training pertinent to the current configuration. It facilitates storing models, logs, and other relevant data, ensuring that training can resume seamlessly.
+
+#### Detailed Examples
+
+For a detailed exploration of the HPO4DL framework, we've provided an in-depth example in [**hpo4dl GitHub repository**] [hpo4dl-code] under: ```examples/timm_main.py```
+
+To execute the provided example, use the following command:
+
+```bash
+python examples/timm_main.py 
+    --dataset torch/cifar100 
+    --train-split train 
+    --val-split validation 
+    --optimizer dyhpo  
+    --output-dir ./hpo4dl_results
+
+```
+
+## 4. Results
+
+We compare HPO4DL against well-known optimization techniques: SMAC, Optuna, and Hyperband, using datasets CIFAR10 and CIFAR100. The configuration space for the benchmarking comprised:
+
+- lr (Learning Rate)
+    - Type: Float 		
+    - Bounds: 1e-05 to 1	
+    - Logarithmic Scaling: True
+- weight_decay
+    - Type: Float		
+    - Bounds: 1e-05 to 1	
+    - Logarithmic Scaling: True
+- model
+    - Type: Categorical		
+    - Choices: mobilevit_xxs, dla60x_c, edgenext_xx_small
+- opt (Optimizer)
+    - Type: Categorical		
+    - Choices: sgd, adam
+- momentum
+    - Type: Float		
+    - Bounds: 0.1 to 0.99	
+    - Momentum is conditional upon the optimizer used. It's only applicable when SGD is chosen.
+
+
+For the benchmarking, the top-1 accuracy served as the evaluation metric with a cap of 27 epochs for the objective function. 
+The results showed that HPO4DL performs competitively compared to other methods.
+
+
+{:refdef: style="text-align: center;"}
+![alat text](/assets/images/hpo4dl/results.svg)
+*Comparison of DyHPO, Hyperband, SMAC, Optuna*
+{: refdef}
+
+## 5. Conclusion
+
+The HPO4DL framework presents a robust solution for hyperparameter optimization in deep learning, catering to the specific needs of this domain. With the ability to dynamically decide on the best configurations and efficiently allocate resources, it promises to streamline the optimization process. Our benchmarks validate the effectiveness of HPO4DL and highlight its comparable performance to established methods like SMAC, Optuna, and Hyperband. As the field of machine learning continues to evolve, tools like HPO4DL will be instrumental in pushing the boundaries and achieving peak model performance. We encourage users and researchers to delve into our GitHub repository for further exploration and insights.
+
+
+## References
+
+[^dyhpo-paper]: [Supervising the Multi-Fidelity Race of Hyperparameter Configurations](https://arxiv.org/abs/2202.09774)
+
+[hpo4dl-code]: https://github.com/releaunifreiburg/HPO4DL
